@@ -1,0 +1,638 @@
+1 data wrangling 1 
+Importing Libraries
+
+import pandas as pd
+import numpy as np 
+import matplotlib as plt 
+import sklearn
+from sklearn import preprocessing
+Loading Dataset
+
+df = pd.read_csv("D:\Atharva\DSBDAL\AQI and Lat Long of Countries.csv")
+df
+Checking for Null Values
+
+df.isna().any()
+df.describe()
+df.describe()
+df.head()
+#Checking dimensions of data
+df.shape
+df.isnull().sum()
+# Filling all null values
+df["Country"].fillna(method="ffill",inplace=True)
+df
+df.isnull().sum()
+#Verifying data types
+df.dtypes
+#Converting categorical variables
+df['AQI Category'].replace(['Good','Moderate','Bad'],[0,1,2], inplace=True)
+df
+df['AQI Category'].values
+
+--------------------------------------------------------------------------------------------------
+
+2 data wrangling 2
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
+df = pd.read_csv("Academic-Performance-Dataset.csv")
+df
+df.shape
+df.dtypes
+df.isna().sum()
+cols_with_na = []
+for col in df.columns:
+    if df[col].isna().any():
+        cols_with_na.append(col)
+
+cols_with_na
+for col in cols_with_na:
+    col_dt = df[col].dtypes
+    if (col_dt == 'int64' or col_dt == 'float64'):
+        outliers = (df[col] < 0) | (100 < df[col])
+        df.loc[outliers, col] = np.nan
+        df[col] = df[col].fillna(df[col].mean())
+    else:
+        df[col] = df[col].fillna(method='ffill')
+df
+df['Total Marks']=df['Phy_marks']+df['Che_marks']+df['EM1_marks']+df['PPS_marks']+df['SME_marks']
+df['Percentage']=df['Total Marks']/5
+
+df
+import matplotlib.pyplot as plt
+plt.rcParams["figure.figsize"] = (9, 6)
+df_list = ['Attendence', 'Phy_marks', 'Che_marks', 'EM1_marks', 'PPS_marks', 'SME_marks']
+fig, axes = plt.subplots(2, 3)
+fig.set_dpi(120)
+
+count=0
+for r in range(2):
+    for c in range(3):
+        _ = df[df_list[count]].plot(kind = 'box', ax=axes[r,c])
+        count+=1
+Q1 = df['Che_marks'].quantile(0.25)
+Q3 = df['Che_marks'].quantile(0.75)
+IQR = Q3 - Q1
+
+Lower_limit = Q1 - 1.5 * IQR
+Upper_limit = Q3 + 1.5 * IQR
+
+print(f'Q1 = {Q1}, Q3 = {Q3}, IQR = {IQR}, Lower_limit = {Lower_limit}, Upper_limit = {Upper_limit}')
+df[(df['Che_marks'] < Lower_limit) | (df['Che_marks'] > Upper_limit)]
+
+
+--------------------------------------------------------------------------------------------------
+
+3 Central Tendency
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+df = pd.read_csv("D:\Atharva\DSBDAL\Iris.csv")
+df.shape
+df.describe()
+df['Species'].value_counts()
+'Iris-setosa'
+setosa = df['Species'] == 'Iris-setosa'
+df[setosa].describe()
+'Iris-versicolor'
+versicolor = df['Species'] == 'Iris-versicolor'
+df[versicolor].describe()
+'Iris-virginica'
+virginica = df['Species'] == 'Iris-virginica'
+df[virginica].describe()
+
+
+--------------------------------------------------------------------------------------------------
+ 4 Linear Regression
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+With this data our objective is create a model using linear regression to predict the houses price
+
+The data contains the following columns:
+
+CRIM: per capita crime rate by town.
+ZN: proportion of residential land zoned for lots over 25,000 sq.ft.
+INDUS: proportion of non-retail business acres per town.
+CHAS: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+NOX: nitrogen oxides concentration (parts per 10 million).
+RM: average number of rooms per dwelling.
+AGE: proportion of owner-occupied units built prior to 1940.
+DIS: weighted mean of distances to five Boston employment centres.
+RAD: index of accessibility to radial highways.
+TAX: full-value property-TAX rate per $10,000.
+PTRATIO:pupil-teacher ratio by town
+BLACK: 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+LSTAT: lower status of the population (percent).
+MEDV: median value of owner-occupied homes in $$1000s
+
+
+Boston = pd.read_csv("boston.csv")
+Boston.head()
+Boston.info()
+Boston.describe()
+
+Boston.plot.scatter('RM', 'MEDV', figsize=(6, 6))
+
+plt.subplots(figsize=(10,8))
+sns.heatmap(Boston.corr(), cmap = 'coolwarm', annot = True, fmt = '.1f');
+
+X = Boston[Boston.columns[:-1]]
+Y = Boston['MEDV']
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# Split DataSet
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
+sc_X = StandardScaler()
+X_train_ = sc_X.fit_transform(X_train)
+X_test_ = sc_X.transform(X_test)
+print(f'Train Dataset Size - X: {X_train.shape}, Y: {Y_train.shape}')
+print(f'Test  Dataset Size - X: {X_test.shape}, Y: {Y_test.shape}')
+
+# Model Building
+lm = LinearRegression()
+lm.fit(X_train_, Y_train)
+predictions = lm.predict(X_test_)
+
+# Model Visualization
+plt.figure(figsize=(6, 6));
+plt.scatter(Y_test, predictions);
+plt.xlabel('Y Test');
+plt.ylabel('Predicted Y');
+plt.title('Test vs Prediction');
+
+plt.figure(figsize=(6, 6));
+sns.regplot(x = X_test['RM'], y = predictions, scatter_kws={'s':5});
+plt.scatter(X_test['RM'], Y_test, marker = '+');
+plt.xlabel('Average number of rooms per dwelling');
+plt.ylabel('Median value of owner-occupied homes');
+plt.title('Regression Line Tracing');
+
+from sklearn import metrics
+print('Mean Absolute Error:', metrics.mean_absolute_error(Y_test, predictions))
+print('Mean Square Error:', metrics.mean_squared_error(Y_test, predictions))
+print('Root Mean Square Error:', np.sqrt(metrics.mean_squared_error(Y_test, predictions)))
+
+# Model Coefficients
+coefficients = pd.DataFrame(lm.coef_.round(2), X.columns)
+coefficients.columns = ['Coefficients']
+coefficients
+
+--------------------------------------------------------------------------------------------------
+
+5.Logistic Regression
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+df = pd.read_csv('Social_Network_Ads.csv')
+df.head()
+df.info()
+df.describe()
+
+X = df[['Age', 'EstimatedSalary']]
+Y = df['Purchased']
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.25, random_state = 0)
+sc_X = StandardScaler()
+X_train = sc_X.fit_transform(X_train)
+X_test = sc_X.transform(X_test)
+
+print(f'Train Dataset Size - X: {X_train.shape}, Y: {Y_train.shape}')
+print(f'Test  Dataset Size - X: {X_test.shape}, Y: {Y_test.shape}')
+from sklearn.linear_model import LogisticRegression
+
+lm = LogisticRegression(random_state = 0, solver='lbfgs' )
+lm.fit(X_train, Y_train)
+predictions = lm.predict(X_test)
+
+plt.figure(figsize=(6, 6));
+sns.regplot(x = X_test[:, 1], y = predictions, scatter_kws={'s':5});
+plt.scatter(X_test[:, 1], Y_test, marker = '+');
+plt.xlabel("User's Estimated Salary");
+plt.ylabel('Ads Purchased');
+plt.title('Regression Line Tracing');
+
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+
+cm = confusion_matrix(Y_test, predictions)
+print(f'''Confusion matrix :\n
+               | Positive Prediction\t| Negative Prediction
+---------------+------------------------+----------------------
+Positive Class | True Positive (TP) {cm[0, 0]}\t| False Negative (FN) {cm[0, 1]}
+---------------+------------------------+----------------------
+Negative Class | False Positive (FP) {cm[1, 0]}\t| True Negative (TN) {cm[1, 1]}\n\n''')
+
+
+cm = classification_report(Y_test, predictions)
+print('Classification report : \n', cm)
+
+# Visualizing the Training set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_train, Y_train
+X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),
+                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))
+
+plt.figure(figsize=(9, 7.5));
+plt.contourf(X1, X2, lm.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),
+             alpha = 0.6, cmap = ListedColormap(('red', 'green')));
+plt.xlim(X1.min(), X1.max());
+plt.ylim(X2.min(), X2.max());
+for i, j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],
+                color = ListedColormap(('red', 'green'))(i), label = j);
+plt.title('Logistic Regression (Training set)');
+plt.xlabel('Age');
+plt.ylabel('Estimated Salary');
+plt.legend();
+plt.show();
+
+# Visualizing the Test set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_test, Y_test
+X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),
+                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))
+
+plt.figure(figsize=(9, 7.5));
+plt.contourf(X1, X2, lm.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),
+             alpha = 0.6, cmap = ListedColormap(('red', 'green')));
+plt.xlim(X1.min(), X1.max());
+plt.ylim(X2.min(), X2.max());
+for i, j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],
+                color = ListedColormap(('red', 'green'))(i), label = j);
+plt.title('Logistic Regression (Test set)');
+plt.xlabel('Age');
+plt.ylabel('Estimated Salary');
+plt.legend();
+plt.show();
+
+---------------------------------------------------------------------------------------------------
+7. NLP
+
+
+sentence1 = "I will walk 500 miles and I would walk 500 more. Just to be the man who walks " + \
+            "a thousand miles to fall down at your door!"
+sentence2 = "I played the play playfully as the players were playing in the play with playfullness"
+
+!pip install nltk
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+from nltk import word_tokenize
+from nltk import sent_tokenize
+
+print('Tokenized words:', word_tokenize(sentence1))
+print('\nTokenized sentences:', sent_tokenize(sentence1))
+
+
+from nltk import pos_tag
+token = word_tokenize(sentence1) + word_tokenize(sentence2)
+tagged = pos_tag(token)                 
+print("Tagging Parts of Speech:", tagged)
+
+from nltk.corpus import stopwords
+stop_words = stopwords.words('english')
+token = word_tokenize(sentence1)
+cleaned_token = []
+for word in token:
+    if word not in stop_words:
+        cleaned_token.append(word)
+print('Unclean version:', token)
+print('\nCleaned version:', cleaned_token)
+
+from nltk.stem import PorterStemmer
+stemmer = PorterStemmer()
+token = word_tokenize(sentence2)
+stemmed = [stemmer.stem(word) for word in token]
+print(" ".join(stemmed))
+
+from nltk.stem import WordNetLemmatizer 
+lemmatizer = WordNetLemmatizer()
+token = word_tokenize(sentence2)
+lemmatized_output = [lemmatizer.lemmatize(word) for word in token]
+print(" ".join(lemmatized_output))
+
+
+# Algorithm for Create representation of document by calculating TFIDF
+# Step 1: Import the necessary libraries.
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Step 2: Initialize the Documents.
+documentA = 'Jupiter is the largest Planet'
+documentB = 'Mars is the fourth planet from the Sun'
+
+# Step 3: Create BagofWords (BoW) for Document A and B.
+bagOfWordsA = documentA.split(' ')
+bagOfWordsB = documentB.split(' ')
+
+# Step 4: Create Collection of Unique words from Document A and B.
+uniqueWords = set(bagOfWordsA).union(set(bagOfWordsB))
+
+# Step 5: Create a dictionary of words and their occurrence for each document in the corpus
+numOfWordsA = dict.fromkeys(uniqueWords, 0)
+for word in bagOfWordsA:
+numOfWordsA[word] += 1
+numOfWordsB = dict.fromkeys(uniqueWords, 0)
+for word in bagOfWordsB:
+numOfWordsB[word] += 1
+
+# Step 6: Compute the term frequency for each of our documents.
+def computeTF(wordDict, bagOfWords):
+tfDict = {}
+bagOfWordsCount = len(bagOfWords)
+for word, count in wordDict.items():
+tfDict[word] = count / float(bagOfWordsCount)
+return tfDict
+tfA = computeTF(numOfWordsA, bagOfWordsA)
+tfB = computeTF(numOfWordsB, bagOfWordsB)
+Colab paid products - Cancel contracts here
+
+# Step 7: Compute the term Inverse Document Frequency.
+def computeIDF(documents):
+import math
+N = len(documents)
+idfDict = dict.fromkeys(documents[0].keys(), 0)
+for document in documents:
+for word, val in document.items():
+if val > 0:
+idfDict[word] += 1
+for word, val in idfDict.items():
+idfDict[word] = math.log(N / float(val))
+return idfDict
+idfs = computeIDF([numOfWordsA, numOfWordsB])
+idfs
+
+# Step 8: Compute the term TF/IDF for all words.
+def computeTFIDF(tfBagOfWords, idfs):
+tfidf = {}
+for word, val in tfBagOfWords.items():
+tfidf[word] = val * idfs[word]
+return tfidf
+tfidfA = computeTFIDF(tfA, idfs)
+tfidfB = computeTFIDF(tfB, idfs)
+df = pd.DataFrame([tfidfA, tfidfB]
+
+-------------------------------------------------------------------------------------------------------------
+
+8. DataViz1
+
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+dataset = pd.read_csv('D:\Atharva\DSBDAL\mtitanic.csv')
+df=pd.DataFrame(dataset)
+df.head()
+
+sns.histplot(df['Fare'], kde=True, linewidth=0);
+sns.jointplot(x='Age', y='Fare', data=df);
+
+-----------------------------------------------------------------------------------------------------------------
+9.  DataViz2
+
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv('D:\Atharva\DSBDAL\mtitanic.csv')
+dataset= pd.DataFrame(df)
+dataset.head()
+
+df.describe()
+df.info()
+df.columns
+
+sns.boxplot(x='Sex', y='Age', data=dataset, hue="Survived");
+
+-------------------------------------------------------------------------------------------------------------------
+
+10. DataViz3
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+df = pd.read_csv('iris.csv')
+df.head()
+df.info()
+np.unique(df["Species"])
+df.describe()
+
+import seaborn as sns
+import matplotlib
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 6), constrained_layout = True)
+
+for i in range(4):
+    x, y = i // 2, i % 2
+    _ = axes[x, y].hist(df[df.columns[i + 1]])
+    _ = axes[x, y].set_title(f"Distribution of {df.columns[i + 1][:-2]}")
+data_to_plot = df[df.columns[1:-1]]
+
+fig, axes = plt.subplots(1, figsize=(12,8))
+bp = axes.boxplot(data_to_plot)
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+SCALA - 
+
+Calculator.scala
+
+object Calculator {
+  def main(args: Array[String]): Unit = {
+    println("Select operation (+, -, *, /, %): ")
+    val operation: Char = scala.io.StdIn.readChar()
+
+    println("Enter number 1: ")
+    val number1: Int = scala.io.StdIn.readInt()
+
+    println("Enter number 2: ")
+    val number2: Int = scala.io.StdIn.readInt()
+
+    val result: Int = operation match {
+      case '+' => number1 + number2
+      case '-' => number1 - number2
+      case '*' => number1 * number2
+      case '/' => number1 / number2
+      case '%' => number1 % number2
+      case _   => throw new IllegalArgumentException("Invalid operation")
+    }
+
+    println("Result is " + result)
+  }
+}
+------------------------------------------------------------------------------------------------------------------------------------
+
+Locate dataset (e.g., sample_weather.txt) for working on weather data which reads the text input files and finds average for temperature, dew point and wind speed.
+
+//simple.text
+Date,           Temp,   DewPoint,   WindSpeed
+2022-05-01,     72,     54,         5.1
+2022-05-02,     68,     55,         6.5
+2022-05-03,     71,     56,         7.0
+2022-05-04,     74,     57,         7.3
+2022-05-05,     65,     54,         6.2
+2022-05-06,     63,     52,         5.7
+2022-05-07,     72,     54,         5.3
+
+
+//Weather.java
+
+package com.jay.scala;
+
+import java.io.*;
+
+public class Weather {
+    public static void main(String[] args) throws IOException {
+        String filePath="C:\\Users\\jayba\\IdeaProjects\\sacala\\src\\simple.txt";
+
+        BufferedReader reader=new BufferedReader(new FileReader(filePath));
+
+        //Skip the header line
+        String line=reader.readLine();
+
+        //Initialize the sum and count variable
+        double sumTemp=0;
+        double sumDewPoint=0;
+        double sumWindSpeed=0;
+        int count=0;
+
+        //read each line of file
+        while((line= reader.readLine())!=null){
+            //split line into field
+            String[] fields=line.split(",");
+
+            //Parse values
+            double temp=Double.parseDouble(fields[1]);
+            double dewPoint=Double.parseDouble(fields[2]);
+            double windSpeed=Double.parseDouble(fields[3]);
+
+            //add value to sum variable
+            sumTemp+=temp;
+            sumDewPoint+=dewPoint;
+            sumWindSpeed+=windSpeed;
+
+            //increment counter
+            count++;
+        }
+        //calculate average
+        double avgTemp=sumTemp/count;
+        double avgDewPoint=sumDewPoint/count;
+        double avgWindSpeed=sumWindSpeed/count;
+
+        //Print average
+        System.out.println("Avg Temp "+avgTemp);
+        System.out.println("Avg Dew Point "+avgDewPoint);
+        System.out.println("Avg wind Speed "+avgWindSpeed);
+
+        //close reader
+        reader.close();
+    }
+}
+
+-----------------------------------------------------------------------------------------------------------------------
+
+import java.io.IOException;
+import java.util.*;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.*;
+import org.apache.hadoop.mapreduce.lib.output.*;
+import org.apache.hadoop.util.*;
+
+public class WordCount extends Configured implements Tool 
+{
+	public static void main(String args[]) throws Exception
+	{
+    		int res = ToolRunner.run(new WordCount(), args);
+    		System.exit(res);
+  	}
+	public int run(String[] args) throws Exception 
+	{
+		Path inputPath = new Path(args[0]);
+    		Path outputPath = new Path(args[1]);
+
+		Configuration conf = getConf();
+    		Job job = new Job(conf, this.getClass().toString());
+    		job.setJarByClass(WordCount.class);
+
+    		FileInputFormat.setInputPaths(job, inputPath);
+    		FileOutputFormat.setOutputPath(job, outputPath);
+
+    		job.setJobName("WordCount");
+  
+ 		job.setMapperClass(Map.class);
+    		job.setCombinerClass(Reduce.class);
+    		job.setReducerClass(Reduce.class);
+    		job.setMapOutputKeyClass(Text.class);
+    		job.setMapOutputValueClass(IntWritable.class);
+    		job.setOutputKeyClass(Text.class);
+    		job.setOutputValueClass(IntWritable.class);
+    		job.setInputFormatClass(TextInputFormat.class);
+    		job.setOutputFormatClass(TextOutputFormat.class);
+   
+   		return job.waitForCompletion(true) ? 0 : 1;
+	}
+
+	public static class Map extends Mapper<LongWritable, Text, Text, IntWritable> 
+	{
+		private final static IntWritable one = new IntWritable(1);
+		private Text word = new Text();
+
+    		@Override
+    		public void map(LongWritable key, Text value, Mapper.Context context) throws IOException, InterruptedException 
+    		{
+      			String line = value.toString();
+      			StringTokenizer tokenizer = new StringTokenizer(line);
+      			while (tokenizer.hasMoreTokens()) 
+      			{
+        			word.set(tokenizer.nextToken());
+        			context.write(word, one);
+      			}
+    		}
+	}
+
+	public static class Reduce extends Reducer<Text, IntWritable, Text, IntWritable> 
+	{
+		@Override
+    		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
+    		{
+      			int sum = 0;
+      			for(IntWritable value : values) 
+      			{
+        			sum += value.get();
+      			}		
+			context.write(key, new IntWritable(sum));
+    		}		
+  	}
+}
