@@ -1,0 +1,288 @@
+// Uber
+
+#Importing required libraries
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn import metrics
+
+df = pd.read_csv('uber.csv') #Reading CSV file
+df.head()
+
+df.dtypes #Checking Datatypes.
+df.isnull().sum() #Checking for Null Values.
+
+df.drop(['Unnamed: 0','key'],axis=1,inplace=True) #Dropping first coloumnn as it is irrelevant.
+df.dropna(axis=0,inplace=True) #Dropping the rows with null values.
+df.head()
+
+def haversine (lon_1, lon_2, lat_1, lat_2): #Function to find the distance using the coordinates
+    lon_1, lon_2, lat_1, lat_2 = map(np.radians, [lon_1, lon_2, lat_1, lat_2]) #Converting Degrees to Radians
+    diff_lon = lon_2 - lon_1
+    diff_lat = lat_2 - lat_1
+    distance = 2 * 6371 * np.arcsin(np.sqrt(np.sin(diff_lat/2.0)**2+np.cos(lat_1)*np.cos(lat_2)*np.sin(diff_lon/2.0)**2)) #Calculationg the Distance using Haversine Formula
+    return distance
+
+df['Distance']= haversine(df['pickup_longitude'],df['dropoff_longitude'],df['pickup_latitude'],df['dropoff_latitude'])
+df['Distance'] = df['Distance'].astype(float).round(2) #Rounding-off to 2 decimals
+df.head()
+
+#Plotting a scatter plot to check for outliers.
+plt.scatter(df['Distance'], df['fare_amount'])
+plt.xlabel("Distance")
+plt.ylabel("fare_amount")
+
+#Dealing with Outliers via removing rows with too large Distance and 0 or lesser distance.
+df.drop(df[df['Distance']>60].index, inplace=True)
+df.drop(df[df['Distance']==0].index, inplace=True)
+df.drop(df[df['Distance']<0].index, inplace=True)
+#Dealing with Outliers via removing rows with 0 or lesser fare amounts.
+df.drop(df[df['fare_amount']==0].index, inplace=True)
+df.drop(df[df['fare_amount']<0].index, inplace=True)
+#Dealing with Outliers via removing rows with non-plausible fare amounts and distance travelled.
+df.drop(df[df['Distance']>100].index, inplace=True)
+df.drop(df[df['fare_amount']>100].index, inplace=True)
+df.drop(df[(df['fare_amount']>100) & (df['Distance']<1)].index, inplace = True )
+df.drop(df[(df['fare_amount']<100) & (df['Distance']>100)].index, inplace = True )
+#Plotting a Scatter Plot to check for any more outliers and also to show correlation between Fare Amount and Distance.
+plt.scatter(df['Distance'], df['fare_amount'])
+plt.xlabel("Distance")
+plt.ylabel("fare_amount")
+
+#Preprocessing the Data Using Standard Scaler in range of -1 to 1
+x = df['Distance'].values.reshape(-1, 1)        #Independent Variable
+y = df['fare_amount'].values.reshape(-1, 1)     #Dependent Variable
+std = StandardScaler()
+Y = std.fit_transform(y)
+X = std.fit_transform(x)
+#Splitting the data into training and testing set
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=1)
+
+def apply_model(model): #Model to print the metrics of the various prediction models
+    model.fit(X_train,Y_train)
+    print("Training score = ",model.score(X_train,Y_train))
+    print("Testing score = ",model.score(X_test,Y_test))
+    print("Accuracy = ",model.score(X_test,Y_test))
+    Y_pred = model.predict(X_test)
+    print("Predicted values:\n",Y_pred)
+    print("Mean Absolute Error =", metrics.mean_absolute_error(Y_test, Y_pred))
+    print("Mean Squared Error =", metrics.mean_squared_error(Y_test, Y_pred))
+    print("Root Mean Squared Error =", np.sqrt(metrics.mean_squared_error(Y_test, Y_pred)))
+
+lr = LinearRegression()
+apply_model(lr)
+
+#Random Forest Model
+rf = RandomForestRegressor(n_estimators=100, random_state=10)
+apply_model(rf)
+
+-------------------------------------------------------------------------------------------------------------------
+
+// Email
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix, classification_report,accuracy_score
+
+df=pd.read_csv("emails.csv") #Reading the Dataset
+df.head()
+
+df.drop(columns=['Email No.'], inplace=True) #Dropping Email No. as it is irrelevant.
+df.head()
+
+#Splitting the Dataset
+X=df.iloc[:, :df.shape[1]-1]
+Y=df.iloc[:, -1]
+X_train, X_test, Y_train, Y_test=train_test_split(X, Y, test_size=0.20, random_state=8)
+
+def apply_model(model):#Model to print the scores of various models
+    model.fit(X_train,Y_train)
+    print("Training score = ",model.score(X_train,Y_train))
+    print("Testing score = ",model.score(X_test,Y_test))
+    print("Accuracy = ",model.score(X_test,Y_test))
+    Y_pred = model.predict(X_test)
+    print("Predicted values:\n",Y_pred)
+    print("Confusion Matrix:\n",confusion_matrix(Y_test,Y_pred))
+    print("Classification Report:\n",classification_report(Y_test,Y_pred))
+
+knn = KNeighborsClassifier(n_neighbors=17) #KNN Model
+apply_model(knn)
+
+svm = SVC(kernel='linear',random_state=3,max_iter=10000) #SVM Model
+apply_model(svm)
+
+----------------------------------------------------------------------------------------------------------------------
+
+// Bank Neural Network
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import tensorflow as tf
+
+df = pd.read_csv('Churn_Modelling.csv')
+df.head()
+
+plt.xlabel('Exited')
+plt.ylabel('Count')
+df['Exited'].value_counts().plot.bar()
+plt.show()
+
+df['Geography'].value_counts()
+df = pd.concat([df,pd.get_dummies(df['Geography'],prefix='Geo')],axis=1)
+df = pd.concat([df,pd.get_dummies(df['Gender'])],axis=1)
+df.info()
+
+df.drop(columns=['RowNumber','CustomerId','Surname','Geography','Gender'],inplace=True)
+df.head()
+
+y = df['Exited'].values
+x = df.loc[:,df.columns != 'Exited'].values
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,random_state=20,test_size=0.25)
+
+from sklearn.preprocessing import StandardScaler
+std_x = StandardScaler()
+x_train = std_x.fit_transform(x_train)
+x_test = std_x.transform(x_test)
+
+x_train.shape
+
+import tensorflow as tf
+from tensorflow.keras.layers import Dense,Conv1D,Flatten
+from tensorflow.keras.models import Sequential, Model
+
+model=Sequential()
+model.add(Flatten(input_shape=(13,)))
+model.add(Dense(100,activation='relu'))
+model.add(Dense(1,activation='sigmoid'))
+
+model.compile(optimizer='adam',metrics=['accuracy'],loss='BinaryCrossentropy')
+
+model.fit(x_train,y_train,batch_size=64,validation_split=0.1,epochs=100)
+
+pred = model.predict(x_test)
+y_pred = []
+for val in pred:
+    if val > 0.5:
+        y_pred.append(1)
+    else:
+        y_pred.append(0)
+from sklearn.metrics import accuracy_score,confusion_matrix,ConfusionMatrixDisplay
+accuracy_score(y_test,y_pred)
+cm = confusion_matrix(y_test,y_pred)
+display = ConfusionMatrixDisplay(cm)
+display.plot()
+
+from sklearn.neural_network import MLPClassifier
+
+nn_classifier = MLPClassifier(hidden_layer_sizes=(100),activation='logistic',max_iter=300,)
+nn_classifier.fit(x_train,y_train)
+
+y_pred2 = nn_classifier.predict(x_test)
+accuracy_score(y_pred=y_pred2,y_true=y_test)
+nn_classifier.score(x_test,y_test)
+
+--------------------------------------------------------------------------------------------------
+
+// Diabetes KNN 
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+
+df=pd.read_csv("diabetes.csv") #Reading the Dataset
+df.head()
+
+df.dtypes
+
+df["Glucose"].replace(0,df["Glucose"].mean(), inplace=True)
+df["BloodPressure"].replace(0,df["BloodPressure"].mean(), inplace=True)
+df["SkinThickness"].replace(0,df["SkinThickness"].mean(), inplace=True)
+df["Insulin"].replace(0,df["Insulin"].mean(), inplace=True)
+df["BMI"].replace(0,df["BMI"].mean(), inplace=True)
+df.head()
+
+X = df.iloc[:, :8]
+Y = df.iloc[:, 8:]
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y,test_size=0.20,random_state=0)
+
+def apply_model(model):#Model to print the scores of various models
+    model.fit(X_train,Y_train)
+    print("Training score = ",model.score(X_train,Y_train))
+    print("Testing score = ",model.score(X_test,Y_test))
+    print("Accuracy = ",model.score(X_test,Y_test))
+    Y_pred = model.predict(X_test)
+    print("Predicted values:\n",Y_pred)
+    print("Confusion Matrix:\n",confusion_matrix(Y_test,Y_pred))
+    print("Classification Report:\n",classification_report(Y_test,Y_pred))
+
+knn = KNeighborsClassifier(n_neighbors=5) #KNN Model
+apply_model(knn)
+
+----------------------------------------------------------------------------------------------------------------------
+
+// Sales K-Means clustering
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv('sales_data_sample.csv',encoding='unicode_escape')
+df.head()
+
+df.info()
+
+df_drop  = ['ADDRESSLINE1', 'ADDRESSLINE2', 'POSTALCODE', 'CITY', 'TERRITORY', 'PHONE', 'STATE', 'CONTACTFIRSTNAME', 'CONTACTLASTNAME', 'CUSTOMERNAME', 'ORDERNUMBER']
+df = df.drop(df_drop, axis=1)
+
+df.info()
+
+for col in df.columns.values:
+    print(df[col].value_counts())
+
+df.drop(columns=['ORDERDATE','STATUS','MONTH_ID','QTR_ID','YEAR_ID'],inplace=True)
+df.head()
+
+from sklearn.preprocessing import LabelEncoder
+def convert_categories(col):
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col].values)
+
+categories = ['PRODUCTLINE','PRODUCTCODE','COUNTRY','DEALSIZE']
+for col in categories:
+    convert_categories(col)
+
+df.head()
+
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+data = sc.fit_transform(df)
+
+from sklearn.cluster import KMeans
+wcss = []
+for k in range(1,15):
+    kmeans = KMeans(n_clusters=k,init='k-means++',random_state=15)
+    kmeans.fit(data)
+    wcss.append(kmeans.inertia_)
+
+k = list(range(1,15))
+plt.plot(k,wcss)
+plt.xlabel('Clusters')
+plt.ylabel('scores')
+plt.title('Finding right number of clusters')
+plt.grid()
+plt.show()
+
